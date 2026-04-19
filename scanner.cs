@@ -140,6 +140,7 @@ namespace TINY_Compiler
                     {
                         FindTokenClass(lexeme);
                     }
+                    continue;
                 }
                 else
                 {
