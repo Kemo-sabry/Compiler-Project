@@ -120,8 +120,26 @@ namespace TINY_Compiler
                         if (SourceCode[i] == '.') dotSeen = true;
                         lexeme += SourceCode[i++];
                     }
-                    FindTokenClass(lexeme);
-                    continue;
+                    // Check if letters come after number → invalid identifier
+                    if (i < SourceCode.Length && char.IsLetter(SourceCode[i]))
+                    {
+                        while (i < SourceCode.Length && char.IsLetterOrDigit(SourceCode[i]))
+                        {
+                            lexeme += SourceCode[i++];
+                        }
+
+                        Tokens.Add(new Token
+                        {
+                            lex = lexeme,
+                            token_type = Token_Class.Undefined
+                        });
+
+                        Errors.Error_List.Add($"[Scanner Error] Invalid identifier '{lexeme}': identifiers cannot start with a digit");
+                    }
+                    else
+                    {
+                        FindTokenClass(lexeme);
+                    }
                 }
                 else
                 {
