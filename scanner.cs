@@ -29,6 +29,7 @@ namespace TINY_Compiler
         Identifier,
         Constant,
         StringLiteral,
+        Main,
 
         Undefined
     }
@@ -66,6 +67,7 @@ namespace TINY_Compiler
             ReservedWords["end"] = Token_Class.End;
             ReservedWords["return"] = Token_Class.Return;
             ReservedWords["endl"] = Token_Class.Endl;
+            ReservedWords["main"] = Token_Class.Main;
 
             Operators["&&"] = Token_Class.AndOp;
             Operators["||"] = Token_Class.OrOp;
@@ -128,11 +130,7 @@ namespace TINY_Compiler
                             lexeme += SourceCode[i++];
                         }
 
-                        Tokens.Add(new Token
-                        {
-                            lex = lexeme,
-                            token_type = Token_Class.Undefined
-                        });
+                        
 
                         Errors.Error_List.Add($"[Scanner Error] Invalid identifier '{lexeme}': identifiers cannot start with a digit");
                     }
@@ -160,7 +158,6 @@ namespace TINY_Compiler
                         else
                         {
                             // Unterminated string
-                            Tokens.Add(new Token { lex = strLex, token_type = Token_Class.Undefined });
                             Errors.Error_List.Add($"[Scanner Error] Unterminated string: {strLex}");
                         }
                         continue;
@@ -215,26 +212,27 @@ namespace TINY_Compiler
             if (ReservedWords.ContainsKey(Lex.ToLower()))
             {
                 Tok.token_type = ReservedWords[Lex.ToLower()];
+                Tokens.Add(Tok);
             }
             else if (Operators.ContainsKey(Lex))
             {
                 Tok.token_type = Operators[Lex];
+                Tokens.Add(Tok);
             }
             else if (isIdentifier(Lex))
             {
                 Tok.token_type = Token_Class.Identifier;
+                Tokens.Add(Tok);
             }
             else if (isConstant(Lex))
             {
                 Tok.token_type = Token_Class.Constant;
+                Tokens.Add(Tok);
             }
             else
             {
-                Tok.token_type = Token_Class.Undefined;
                 Errors.Error_List.Add($"[Scanner Error] Undefined token: {Lex}");
             }
-
-            Tokens.Add(Tok);
         }
 
         bool isIdentifier(string lex)
