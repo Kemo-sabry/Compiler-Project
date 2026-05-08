@@ -22,11 +22,19 @@ namespace TINY_Compiler
         {
             textBox2.Clear();
             dataGridView1.Rows.Clear();
+            treeView1.Nodes.Clear();     
 
             string Code = textBox1.Text;
+
             TINY_Compiler.Start_Compiling(Code);
+
             PrintTokens();
             PrintErrors();
+
+            
+            treeView1.Nodes.Add(
+                Parser.PrintParseTree(TINY_Compiler.ParseTreeRoot)
+            );
         }
 
         void PrintTokens()

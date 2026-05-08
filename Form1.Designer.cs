@@ -1,7 +1,11 @@
 ﻿namespace TINY_Compiler
+
+
 {
     partial class Form1
     {
+        private System.Windows.Forms.TreeView treeView1;
+        
         private System.ComponentModel.IContainer components = null;
 
         protected override void Dispose(bool disposing)
@@ -35,6 +39,15 @@
             textBox1.ScrollBars = ScrollBars.Vertical;
             textBox1.Size = new Size(525, 265);
             textBox1.TabIndex = 0;
+
+            // 
+            // treeView1
+            //  
+            treeView1 = new System.Windows.Forms.TreeView();
+            treeView1.Location = new System.Drawing.Point(560, 16);
+            treeView1.Name = "treeView1";
+            treeView1.Size = new System.Drawing.Size(320, 265);
+            treeView1.TabIndex = 6;
             // 
             // textBox2
             // 
@@ -115,6 +128,7 @@
             Controls.Add(button2);
             Controls.Add(label1);
             Controls.Add(dataGridView1);
+            Controls.Add(treeView1);
             Margin = new Padding(3, 4, 3, 4);
             Name = "Form1";
             Text = "TINY Compiler - Scanner";
