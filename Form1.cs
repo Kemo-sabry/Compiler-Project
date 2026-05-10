@@ -1,13 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace TINY_Compiler
 {
@@ -18,55 +12,114 @@ namespace TINY_Compiler
             InitializeComponent();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        // ── Compile ───────────────────────────────────────────────
+        private void btnCompile_Click(object sender, EventArgs e)
         {
-            textBox2.Clear();
-            dataGridView1.Rows.Clear();
+            // Clear everything
+            dataGridViewTokens.Rows.Clear();
+            dataGridViewSymbols.Rows.Clear();
+            listBoxErrors.Items.Clear();
+            treeView1.Nodes.Clear();
 
-            string Code = textBox1.Text;
-            TINY_Compiler.Start_Compiling(Code);
-            PrintTokens();
-            PrintErrors();
-        }
+            string code = txtSource.Text;
 
-        void PrintTokens()
-        {
-            for (int i = 0; i < TINY_Compiler.tiny_Scanner.Tokens.Count; i++)
+            if (string.IsNullOrWhiteSpace(code))
             {
-                dataGridView1.Rows.Add(
-                    TINY_Compiler.tiny_Scanner.Tokens.ElementAt(i).lex,
-                    TINY_Compiler.tiny_Scanner.Tokens.ElementAt(i).token_type
-                );
+                listBoxErrors.Items.Add("⚠  No source code to compile.");
+                return;
             }
-        }
 
-        void PrintErrors()
-        {
-            for (int i = 0; i < Errors.Error_List.Count; i++)
+            // ── PHASE 1: Scanning ─────────────────────────────────
+            TINY_Compiler.Start_Compiling(code);
+            PopulateTokenGrid();
+
+            // STOP if scanner found any lexical errors
+            if (Errors.Error_List.Count > 0)
             {
-                textBox2.Text += Errors.Error_List[i];
-                textBox2.Text += "\r\n";
+                listBoxErrors.Items.Add("✖  Lexical errors found. Compilation stopped.");
+                listBoxErrors.Items.Add("─────────────────────────────────────────");
+               
+                foreach (var err in Errors.Error_List)
+                    listBoxErrors.Items.Add(err);
+                return;
             }
+
+            // ── PHASE 2: Parsing ──────────────────────────────────
+            var parser = new Parser();
+            Node parseRoot = parser.StartParsing(TINY_Compiler.TokenStream);
+
+            // STOP if parser found any syntax errors
+            if (Errors.Error_List.Count > 0)
+            {
+                listBoxErrors.Items.Add("✖  Syntax errors found. Compilation stopped.");
+                listBoxErrors.Items.Add("─────────────────────────────────────────");
+                foreach (var err in Errors.Error_List)
+                    listBoxErrors.Items.Add(err);
+
+                // Still show whatever partial tree was built
+                TreeNode tvRoot = Parser.ToTreeView(parseRoot);
+                if (tvRoot != null)
+                {
+                    treeView1.Nodes.Add(tvRoot);
+                    treeView1.ExpandAll();
+                }
+                return;
+            }
+
+            // ── SUCCESS ───────────────────────────────────────────
+            PopulateSymbolTable();
+
+            TreeNode successRoot = Parser.ToTreeView(parseRoot);
+            if (successRoot != null)
+            {
+                treeView1.Nodes.Add(successRoot);
+                treeView1.ExpandAll();
+            }
+
+            listBoxErrors.Items.Add("✔  Compilation successful — no errors found.");
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        // ── Clear ─────────────────────────────────────────────────
+        private void btnClear_Click(object sender, EventArgs e)
         {
-            dataGridView1.Rows.Clear();
+            txtSource.Clear();
+            dataGridViewTokens.Rows.Clear();
+            dataGridViewSymbols.Rows.Clear();
+            listBoxErrors.Items.Clear();
+            treeView1.Nodes.Clear();
             TINY_Compiler.TokenStream.Clear();
+            TINY_Compiler.tiny_Scanner.Tokens.Clear();
             Errors.Error_List.Clear();
-            textBox2.Clear();
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        // ── Helpers ───────────────────────────────────────────────
+        void PopulateTokenGrid()
         {
+            foreach (var tok in TINY_Compiler.tiny_Scanner.Tokens)
+                dataGridViewTokens.Rows.Add(tok.lex, tok.token_type.ToString());
         }
 
-        private void label1_Click(object sender, EventArgs e)
+        void PopulateSymbolTable()
         {
-        }
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var tokens = TINY_Compiler.tiny_Scanner.Tokens;
 
-        private void textBox2_TextChanged(object sender, EventArgs e)
-        {
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var tok = tokens[i];
+                if (tok.token_type == Token_Class.Identifier && seen.Add(tok.lex))
+                {
+                    string dtype = "—";
+                    if (i > 0)
+                    {
+                        var prev = tokens[i - 1];
+                        if (prev.token_type == Token_Class.Int) dtype = "int";
+                        else if (prev.token_type == Token_Class.Float) dtype = "float";
+                        else if (prev.token_type == Token_Class.StringType) dtype = "string";
+                    }
+                    dataGridViewSymbols.Rows.Add(tok.lex, dtype);
+                }
+            }
         }
     }
 }
